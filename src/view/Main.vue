@@ -213,6 +213,7 @@ export default {
         this.otp = now.getTime();
   
         var i = 1
+        var endCandidate = false;
         this.articleNum = 0;
         this.fetching = true;
         while(this.fetching) {
@@ -227,7 +228,7 @@ export default {
           }
           await axios.post(this.endpoint + '/api/crawl/gall/summary', request, {validateStatus: (status) => {return status < 500}}).then((res) => {
               if(res.status == 200){
-                this.lastGallDate = res.data.lastGallDate? res.data.lastGallDate : now.getTime();
+                this.lastGallDate = res.data.lastGallDate? res.data.lastGallDate : (this.lastGallDate? this.lastGallDate : now.getTime());
                 this.fetchedDates = (now.getTime() - (new Date(this.lastGallDate)).getTime())
                 this.fetchedProps = parseInt(this.fetchedDates *100 / this.daterange)
                 const articleNumAbs = Math.abs(parseInt(res.data.articleNum));
@@ -238,9 +239,10 @@ export default {
                   i--;
                   return;
                 }
-                if(parseInt(res.data.articleNum) < 0) {
+                if(parseInt(res.data.articleNum) < 0 || (endCandidate && res.data.endCandidateFlag)) {
                   this.fetching = false;
                 }
+                endCandidate = res.data.endCandidateFlag;
               }
               else{
                   alert(res.status, res.data.info);
@@ -250,7 +252,7 @@ export default {
             this.fetching = false;
           });
         }
-        if(!this.lastGallDate || this.lastGallDate == now.getTime()) {
+        if(!this.lastGallDate || typeof(this.lastGallDate) == 'number') {
           this.lastGallDate = startDateTimeISOSeoul;
         }
 
