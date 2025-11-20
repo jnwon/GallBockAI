@@ -5,8 +5,8 @@
     <img v-else style="scale:0.7" src="@/assets/mandu.png">
     <div style="height: 50px; align-content:center">
       <h4 v-if="fetching" style="font-size:small">원활한 성능을 위해 게시물의 최대 검색범위는<br>20페이지 내외로 제한됩니다.</h4>
-      <h4 v-else-if="aiRsp == ''">갤떡 <strong style="color:blue">AI</strong>가 요약해줌</h4>
-      <h4 v-else> {{ (lastGallDate? lastGallDate.substring(5,16) + ' ~ ' : '') + (endDt? endDt.substring(5,16).replace('T', ' ') : '') + (' | ' + articleNum + '게시물') }}</h4>
+      <h4 v-else-if="gemining || aiRsp != ''"> {{ (lastGallDate? lastGallDate.substring(5,16).replace('T', ' ') + ' ~ ' : '') + (endDateTimeDisplay? endDateTimeDisplay.substring(5,16).replace('T', ' ') : '') + (' | ' + articleNum + '게시물') }}</h4>
+      <h4 v-else>갤떡 <strong style="color:blue">AI</strong>가 요약해줌</h4>
     </div>
     <div class="row">
       <div class="col-sm-2"></div>
@@ -27,9 +27,7 @@
           <span v-if="!fetching && !gemining" style="cursor: pointer;" @click="fetchData()"><i class="fas fa-play"></i></span>
           <span v-else style="cursor: pointer;" @click="abort()"><i class="fas fa-stop"></i></span>
         </div>
-        <div v-if="aiRsp" class="well" style="text-align: left;">
-          {{ aiRsp }}
-        </div>
+        <div v-if="aiRsp" v-html="aiRsp" class="well" style="text-align: left;"></div>
         <div :style="'display: flex; text-align: center; padding: 10px; justify-content: ' + (aiRsp? 'space-between' : 'center')">
           <span>개발자연락처: <a href="mailto:atalanta1618@gmail.com?subject=[갤떡요약.ai] ">atalanta1618@gmail.com</a></span>
           <span v-if="aiRsp"> <a href="#">Top</a></span>
@@ -97,6 +95,7 @@
 <script>
 import axios from 'axios';
 import Datepicker from '@/components/Datepicker.vue'
+import { marked } from 'marked';
 
 export default {
   name: 'GallBockAi',
@@ -119,24 +118,23 @@ export default {
       endTime: '',
       aiRsp: '',
       lastGallDate: '',
-      articleNum: 0,
+      endDateTimeDisplay: '',
+      articleNum: null,
       daterange: 0,
       fetchedDates: 0,
       fetchedProps: 0,
       otp: null,
-      export:'',
-      exportUsers: true,
-      exportArticles: true,
-      tutorial: 0,
       selectTimeSet: [],
       endpoint: process.env.VUE_APP_SERVER_ENDPOINT
     }
   },
   async mounted() {
     this.isMobile = window.innerWidth < 450;
+
     for(var i=0; i < 24*4; i++) {
         this.selectTimeSet.push(i*15);
     }
+    
     const now = new Date();
     this.endDt = now.toISOString();
     this.startDt = (new Date(now.getTime() - (60 * 60 * 1000))).toISOString();
@@ -179,17 +177,16 @@ export default {
 
       var request = {
         gallId: this.gallId,
-        isMinorGallery: this.isMinorGallery,
-        page: 1
+        isMinorGallery: this.isMinorGallery
       }
       this.checking = true;
-      await axios.post(this.endpoint + '/api/crawl/gall/sbest', request, {validateStatus: (status) => {return status < 500}}).then((res) => {
+      await axios.post(this.endpoint + '/api/crawl/gall/idcheck', request, {validateStatus: (status) => {return status < 500}}).then((res) => {
           if(res.status == 200){
             alert('갤 ID가 확인되었습니다.')
             this.isChecked = true;
           }
           else{
-            alert(res.status, res.data);
+            alert(res.status, res.data.info);
           }
       }).catch(() => {
         alert('존재하지않는 갤 ID입니다.')
@@ -211,10 +208,12 @@ export default {
         const now = new Date();
         const startDateTimeISOSeoul = this.startDt.split('T')[0] + 'T' + this.renderTime(this.startTime) + ':00';
         const endDateTimeISOSeoul = this.endDt.split('T')[0] + 'T' + this.renderTime(this.endTime) + ':00';
-        this.daterange = (now.getTime() - new Date(startDateTimeISOSeoul).getTime()) / (3600*24*1000);
+        this.endDateTimeDisplay = endDateTimeISOSeoul;
+        this.daterange = now.getTime() - new Date(startDateTimeISOSeoul).getTime();
         this.otp = now.getTime();
   
         var i = 1
+        this.articleNum = 0;
         this.fetching = true;
         while(this.fetching) {
           var request = {
@@ -228,24 +227,34 @@ export default {
           }
           await axios.post(this.endpoint + '/api/crawl/gall/summary', request, {validateStatus: (status) => {return status < 500}}).then((res) => {
               if(res.status == 200){
-                this.lastGallDate = res.data.lastGallDate;
-                this.fetchedDates = (now.getTime() - (new Date(this.lastGallDate)).getTime()) / (3600*24*1000)
+                this.lastGallDate = res.data.lastGallDate? res.data.lastGallDate : now.getTime();
+                this.fetchedDates = (now.getTime() - (new Date(this.lastGallDate)).getTime())
                 this.fetchedProps = parseInt(this.fetchedDates *100 / this.daterange)
-                this.articleNum = this.articleNum + Math.abs(parseInt(res.data.articleNum));
+                const articleNumAbs = Math.abs(parseInt(res.data.articleNum));
+                if(articleNumAbs < 100) {
+                  this.articleNum = this.articleNum + articleNumAbs;
+                }
+                if(articleNumAbs >= 500) {
+                  i--;
+                  return;
+                }
                 if(parseInt(res.data.articleNum) < 0) {
                   this.fetching = false;
                 }
               }
               else{
-                  alert(res.status, res.data);
+                  alert(res.status, res.data.info);
               }
           }).catch(() => {
-            this.articleNum = 0;
+            this.articleNum = null;
             this.fetching = false;
           });
         }
+        if(!this.lastGallDate || this.lastGallDate == now.getTime()) {
+          this.lastGallDate = startDateTimeISOSeoul;
+        }
 
-        if(this.articleNum == 0) {
+        if(this.articleNum == null) {
           alert('서버와의 통신이 원활하지 않습니다.\n관리자에게 문의하세요.');
           this.otp = null;
           return;
@@ -259,14 +268,16 @@ export default {
       }
       await axios.post(this.endpoint + '/api/crawl/gall/summary', request, {validateStatus: (status) => {return status < 500}}).then((res) => {
           if(res.status == 200){
-            this.aiRsp = res.data.aiRsp;
+            this.aiRsp = marked(res.data.aiRsp);
             if(parseInt(res.data.articleNum) != -4) {
               this.otp = null;
             }
           }
           else{
-              alert(res.status, res.data);
+              alert(res.status, res.data.info);
           }
+      }).catch((data) => {
+        this.aiRsp = marked('서버와의 통신이 원활하지 않습니다.\n관리자에게 문의하세요(' + data.message + ').');
       });
       this.gemining =false;
     },
@@ -282,7 +293,7 @@ export default {
               location.reload();
             }
             else{
-                alert(res.status, res.data);
+                alert(res.status, res.data.info);
             }
         }).catch(() => {
           alert('서버와의 통신이 원활하지 않습니다.\n중단버튼을 다시 실행해주세요.\n본 메세지가 반복될경우 관리자에게 문의하세요.');
