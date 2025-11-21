@@ -21,6 +21,6 @@ module.exports = defineConfig({
 			}),
 		],
 	},
-  publicPath: '/GallBockAI',
+  publicPath: '/',
   outputDir: 'docs'
 })
