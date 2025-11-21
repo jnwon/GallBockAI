@@ -4,7 +4,7 @@ import Hello from '@/components/HelloWorld.vue'
 import Main from '@/view/Main.vue'
 
 export default createRouter({
-    history: createWebHistory('/gallbockai/'),
+    history: createWebHistory('/GallBockAi/'),
     routes: [
         {
             path: '/',
