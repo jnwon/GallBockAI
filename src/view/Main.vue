@@ -21,7 +21,7 @@
           </div>
           <div v-else-if="gemining" class="progress" style="width: 70%">
             <div class="progress-bar progress-bar-info progress-bar-striped active" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width:100%">
-              AI 분석중..
+              AI 분석중.. (약 30초 소요)
             </div>
           </div>
           <!-- <span v-if="users.length > 0" style="cursor: pointer; position:absolute; right: 15%;" onclick="window.$('#exportOption').modal('show')"><i class="fas fa-share-alt"></i></span> -->
