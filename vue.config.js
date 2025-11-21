@@ -15,7 +15,7 @@ module.exports = defineConfig({
 				patterns: [
 					{
 						from: path.resolve(__dirname, 'CNAME'),
-						to: path.resolve(__dirname, 'dist'),
+						to: path.resolve(__dirname, 'docs'),
 					},
 				],
 			}),
