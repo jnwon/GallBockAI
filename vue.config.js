@@ -17,6 +17,10 @@ module.exports = defineConfig({
 						from: path.resolve(__dirname, 'CNAME'),
 						to: path.resolve(__dirname, 'docs'),
 					},
+          {
+						from: path.resolve(__dirname, 'public/404.html'),
+						to: path.resolve(__dirname, 'dist'),
+					}
 				],
 			}),
 		],
