@@ -9,6 +9,7 @@ app.directive('tooltip', {
     mounted(el, binding) {
         window.$(el).tooltip({
             title: binding.value,
+            placement: binding.arg,
             triger: 'focus',
             html: true
         })

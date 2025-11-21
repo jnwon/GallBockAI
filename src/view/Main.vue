@@ -1,5 +1,6 @@
 <template>
-  <div class="container">
+  <div class="container" style="padding:0px">
+    <ResourceDashboard/>
     <img v-if="fetching" style="scale:0.7" src="@/assets/mandu_wink.png">
     <img v-else-if="gemining" style="scale:0.7" src="@/assets/mandu_kyaa.png">
     <img v-else style="scale:0.7" src="@/assets/mandu.png">
@@ -8,7 +9,7 @@
       <h4 v-else-if="gemining || aiRsp != ''"> {{ (lastGallDate? lastGallDate.substring(5,16).replace('T', ' ') + ' ~ ' : '') + (endDateTimeDisplay? endDateTimeDisplay.substring(5,16).replace('T', ' ') : '') + (' | ' + articleNum + '게시물') }}</h4>
       <h4 v-else>갤떡 <strong style="color:blue">AI</strong>가 요약해줌</h4>
     </div>
-    <div class="row">
+    <div class="row" style="padding-left:15px; padding-right:15px;">
       <div class="col-sm-2"></div>
       <div class="col-sm-8">
         <div style="display: flex; justify-content: space-between; text-align: justify; padding: 10px">
@@ -95,12 +96,13 @@
 <script>
 import axios from 'axios';
 import Datepicker from '@/components/Datepicker.vue'
+import ResourceDashboard from '@/components/ResourceDashboard.vue'
 import { marked } from 'marked';
 
 export default {
   name: 'GallBockAi',
   components: {
-    Datepicker
+    Datepicker, ResourceDashboard
 	},
   data () {
     return {
@@ -305,3 +307,9 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+#setting {
+  padding-right: 15px !important;
+}  
+</style>
